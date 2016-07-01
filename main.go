@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/goraft/raft"
 	"github.com/mauidude/deduper/minhash"
 	"github.com/mauidude/deduper/server"
 	"github.com/mauidude/deduper/server/command"
@@ -43,10 +42,8 @@ func main() {
 	flag.Parse()
 
 	if cfg.debug {
-		raft.SetLogLevel(raft.Debug)
 	}
 
-	raft.RegisterCommand(&command.WriteCommand{})
 
 	rand.Seed(time.Now().UnixNano())
 
