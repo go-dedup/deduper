@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/mauidude/deduper/text"
+	"github.com/suntong/deduper/text"
 )
 
 const (

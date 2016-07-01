@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/mauidude/deduper/minhash"
+	"github.com/suntong/deduper/minhash"
 )
 
 type config struct {
@@ -40,7 +40,6 @@ func main() {
 	if cfg.debug {
 	}
 
-
 	rand.Seed(time.Now().UnixNano())
 
 	// Set the data directory.
@@ -57,6 +56,7 @@ func main() {
 	log.SetFlags(log.LstdFlags)
 
 	mh := minhash.New(cfg.bands, cfg.rows, cfg.shingles)
+	_ = mh
 
-	log.Fatal(s.ListenAndServe(cfg.leader))
+	//log.Fatal(s.ListenAndServe(cfg.leader))
 }
