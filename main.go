@@ -14,14 +14,14 @@ import (
 )
 
 type config struct {
-	path     string
-	host     string
-	port     int
-	leader   string
-	debug    bool
-	bands    int
-	rows     int
-	shingles int
+	path      string
+	host      string
+	port      int
+	leader    string
+	debug     bool
+	bands     int
+	rows      int
+	shingles  int
 	threshold float64
 }
 
@@ -75,6 +75,7 @@ func main() {
 	matches := mh.FindSimilar(
 		strings.NewReader(testStr), cfg.threshold)
 
+	print(cfg.threshold)
 	json.NewEncoder(os.Stdout).Encode(matches)
 }
 
@@ -111,8 +112,8 @@ $ deduper "entirely unrelated"
 $ deduper "entire unrelate"
 []
 
-$ deduper "unrelated" -threshold 0.00001
-[]
+$ deduper -threshold 0.00001 "unrelated"
++1.000000e-005[]
 
 $ deduper "foo qux bar zomg"
 []
@@ -120,8 +121,8 @@ $ deduper "foo qux bar zomg"
 $ deduper "foo qux bar zomg" -threshold 0.0000000001
 []
 
-$ deduper "foo qux bar zomg world"
-[]
+$ deduper -threshold 0.0000000001 "foo qux bar zomg world"
++1.000000e-010[]
 
 $ deduper "foo qux bar zomg world goodbye"
 []
