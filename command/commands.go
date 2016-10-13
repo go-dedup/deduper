@@ -31,8 +31,7 @@ func (c *WriteCommand) CommandName() string {
 }
 
 // Apply writes a value to a key.
-func (c *WriteCommand) Apply(server raft.Server) (interface{}, error) {
-	mh := server.Context().(*minhash.MinHasher)
+func (c *WriteCommand) Apply(mh *minhash.MinHasher) (interface{}, error) {
 	mh.Add(c.ID, strings.NewReader(c.Value))
 	return nil, nil
 }
