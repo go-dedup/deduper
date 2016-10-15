@@ -62,6 +62,9 @@ func main() {
 	log.SetFlags(log.LstdFlags)
 
 	mh := minhash.New(cfg.bands, cfg.rows, cfg.shingles)
+	persistName := "mh.gob"
+	RestoreState(persistName, mh)
+	defer SaveState(persistName, mh)
 
 	tests := []testCase{
 		{"p1", "hello world foo baz bar zomg"},
