@@ -1,89 +1,63 @@
 # Deduper
 
-An HTTP server that allows you to find near duplicate or similar documents given another document.
-Implements go-raft so it can run as a cluster with other nodes and provide high-availability.
+This is a fork from github.com/mauidude/deduper, that allows you to find near duplicate or similar documents given another document.
 
-The explanations of the minhash and local sensitivity hashing algorithms used can be found [here](http://okomestudio.net/biboroku/?p=2065).
-
-## Installation
-
-```sh
-go get github.com/mauidude/deduper
-```
-
-## Building
-
-```sh
-godep go build
-```
-
-## Running
-
-```sh
-./deduper [data directory]
-```
-
-### Options
-
-- `-host` The host the server will run on. Defaults to `localhost`.
-- `-port` The port the server will run on. Defaults to `8080`.
-- `-leader` The `host:port` of the leader node, if running as a follower. Defaults to leader mode.
-- `-debug` Enables debug output. Defaults to `false`.
-
-The following options will require testing with your document sizes and overall corpus size.
-**If you change these values, you will need to readd all of your documents.**
-
-- `-bands` The number of bands to use in the minhash algorithm. Defaults to `100`.
-- `-hashes` The number of hashes to use in the minhash algorithm. Defaults to `2`.
-- `-shingles` The shingle size to use on the text. Defaults to `2`.
+The HTTP server, go-raft (as a cluster with other nodes and provide high-availability) etc have been removed, leaving only the duplicate finding
+part, which now can be used as a generic document dedupe library.
 
 ## Testing
 
-```sh
-godep go test ./...
+```
+$ deduper
+Usage of deduper:
+  -bands int
+        Number of bands (default 100)
+  -debug
+        Enable debug logging
+  -hashes int
+        Number of hashes to use (default 2)
+  -leader string
+        The HTTP host and port of the leader
+  -shingles int
+        Number of shingles (default 2)
+  -threshold float
+        Threshold (default 0.5)
+Data string argument required
+
+$ deduper "hello world foo baz"
+[{"id":"p1","similarity":1}]
+
+$ deduper "world foo baz"
+[]
+
+$ deduper "unrelated"
+[]
+
+$ deduper "entirely unrelated"
+[{"id":"p3","similarity":1}]
+
+$ deduper "entire unrelate"
+[]
+
+$ deduper -threshold 0.00001 "unrelated"
++1.000000e-005[]
+
+$ deduper "foo qux bar zomg"
+[]
+
+$ deduper "foo qux bar zomg" -threshold 0.0000000001
+[]
+
+$ deduper -threshold 0.0000000001 "foo qux bar zomg world"
++1.000000e-010[]
+
+$ deduper "foo qux bar zomg world goodbye"
+[]
+
+$ deduper "goodbye world foo qux bar zomg"
+[{"id":"p2","similarity":1}]
+
 ```
 
-## API
-
-### Adding a document
-
-```
-POST /documents/:id HTTP/1.1
-[HTTP headers...]
-
-[document body]
-```
-
-This will add the document to the index under the given `id`.
-
-Writes can be given to a leader or follower. Any writes to a follower get
-proxied to the leader.
-
-### Finding similar documents
-
-```
-POST /documents/similar HTTP/1.1
-[HTTP headers...]
-
-[document body]
-```
-
-This `POST` takes an optional `threshold` argument in the query string which will return only
-documents with a similarity greater than or equal to that value. This value must be between
-`0` and `1`. The default is `0.8`.
-
-This will return a JSON object of matching documents and their similarity. Similarity is a
-value between `0` and `1` where `1` is identical and `0` is no shared content.
-
-```json
-[
-    {
-        "id": "mydocument.txt",
-        "similarity": 0.934
-    },
-    {
-        "id": "someotherdocument.txt",
-        "similarity": 0.85
-    }
-]
-```
+NB, I believe there is something wrong with above test results, refer to
+https://github.com/mauidude/deduper/issues/2 for details.
