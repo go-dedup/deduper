@@ -80,6 +80,11 @@ func main() {
 
 	print(cfg.threshold)
 	json.NewEncoder(os.Stdout).Encode(matches)
+
+  err := SaveState(persistName, mh)
+	if err != nil {
+		log.Fatal("encode error:", err)
+	}
 }
 
 /*

@@ -22,8 +22,12 @@ func SaveState(persistName string, state interface{}) error {
 	defer f.Close()
 
 	// write persistemce file
-	err = gob.NewEncoder(f).Encode(state)
-	return err
+	e := gob.NewEncoder(f).Encode(state)
+  err = f.Close()
+	if err != nil {
+		return err
+	}
+	return e
 }
 
 func RestoreState(persistName string, state interface{}) error {
