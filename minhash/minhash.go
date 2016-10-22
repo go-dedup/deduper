@@ -31,42 +31,42 @@ type Match struct {
 }
 
 // New creates a new MinHasher with the given band size, number of rows, and shingle size.
-func New(b int, r int, shingleSize int) *MinHasher {
+func New(B int, R int, shingleSize int) *MinHasher {
 	return &MinHasher{
-		hashers:       generateHahsers(b*r, p1),
-		bandHashers:   generateHahsers(b, p2),
-		matrix:        make(matrix, 0),
-		r:             r,
-		b:             b,
-		n:             shingleSize,
-		columnMapping: make(map[int]string),
-		ids:           mapset.NewSet(),
+		hashers:       generateHahsers(B*R, p1),
+		bandhashers:   generateHahsers(B, p2),
+		Matrix:        make(Matrix, 0),
+		R:             R,
+		B:             B,
+		N:             shingleSize,
+		ColumnMapping: make(map[int]string),
+		Ids:           mapset.NewSet(),
 	}
 }
 
 // MinHasher provides near-similar matching capabilities on large
 // strings of text.
 type MinHasher struct {
-	// The mapping of column indexes in the matrix to document ids.
-	columnMapping map[int]string
+	// The mapping of column indexes in the matrix to document Ids.
+	ColumnMapping map[int]string
 
 	// The hash functions used to hash the document's shingles.
 	hashers []hasher
 
 	// The hash functions used to hash the hash function results
 	// into bands.
-	bandHashers []hasher
+	bandhashers []hasher
 
 	// The matrix of documents and hash values. Each vector
 	// is a list of hash values for a document's shingles, eg element m[i,j] is the
 	// value of h[i](document[j]).
-	matrix matrix
+	Matrix Matrix
 
-	// The unique list of document ids being stored.
-	ids mapset.Set
+	// The unique list of document Ids being stored.
+	Ids mapset.Set
 
 	// The band matrix generated with LSH.
-	bands matrix
+	Bands Matrix
 
 	// Locks the bands matrix.
 	bandMutex sync.RWMutex
@@ -75,56 +75,56 @@ type MinHasher struct {
 	matrixMutex sync.RWMutex
 
 	// Number of bands.
-	b int
+	B int
 
 	// Number of rows.
-	r int
+	R int
 
 	// N-shingles being used.
-	n int
+	N int
 }
 
 // Add adds a new document with the given ID to the collection of
 // documents.
-func (m *MinHasher) Add(id string, r io.Reader) {
-	column := m.hashColumn(r)
+func (m *MinHasher) Add(id string, R io.Reader) {
+	column := m.hashColumn(R)
 
 	m.matrixMutex.Lock()
-	m.matrix = append(m.matrix, column)
-	m.columnMapping[len(m.matrix)-1] = id
+	m.Matrix = append(m.Matrix, column)
+	m.ColumnMapping[len(m.Matrix)-1] = id
 	m.matrixMutex.Unlock()
 
-	m.ids.Add(id)
+	m.Ids.Add(id)
 
 	m.bandMutex.Lock()
-	m.bands = nil
+	m.Bands = nil
 	m.bandMutex.Unlock()
 }
 
 // FindSimilar returns a list of documents whose similarity to the given document
 // is greater than or equal to the threshold provided.
-func (m *MinHasher) FindSimilar(r io.Reader, threshold float64) []Match {
-	col := m.hashColumn(r)
+func (m *MinHasher) FindSimilar(R io.Reader, threshold float64) []Match {
+	col := m.hashColumn(R)
 	col = m.bandColumn(col)
 
 	similar := make([]Match, 0)
 
 	m.bandMutex.RLock()
-	if m.bands == nil {
+	if m.Bands == nil {
 		m.bandMutex.RUnlock()
 
 		// lock as writer
 		m.bandMutex.Lock()
-		m.bands = m.bandMatrix()
+		m.Bands = m.bandMatrix()
 		m.bandMutex.Unlock()
 
 		// relock as reader
 		m.bandMutex.RLock()
 	}
 
-	// for each document in the band matrix
-	for i, c := range m.bands {
-		// see if they share any common bands with input
+	// for each document in the band Matrix
+	for i, c := range m.Bands {
+		// see if they share any common Bands with input
 		for j := 0; j < len(col); j++ {
 			if col[j] == c[j] {
 				// needs deeper inspection ie jaccard similarity
@@ -132,7 +132,7 @@ func (m *MinHasher) FindSimilar(r io.Reader, threshold float64) []Match {
 
 				if sim >= threshold {
 					similar = append(similar, Match{
-						ID:         m.columnMapping[i],
+						ID:         m.ColumnMapping[i],
 						Similarity: sim,
 					})
 				}
@@ -150,15 +150,15 @@ func (m *MinHasher) FindSimilar(r io.Reader, threshold float64) []Match {
 // Contains returns true if the MinHasher contains
 // the document with the given id.
 func (m *MinHasher) Contains(id string) bool {
-	return m.ids.Contains(id)
+	return m.Ids.Contains(id)
 }
 
-func (m *MinHasher) hashColumn(r io.Reader) vector {
+func (m *MinHasher) hashColumn(R io.Reader) vector {
 	// the result which holds each minimum hash
-	// value of h_i at the ith index of each n-gram
+	// value of h_i at the ith index of each N-gram
 	column := make(vector, len(m.hashers))
 
-	shingler := text.NewShingler(r, m.n)
+	shingler := text.NewShingler(R, m.N)
 
 	// initialize to max value to find the min
 	for i, _ := range m.hashers {
@@ -185,11 +185,11 @@ func (m *MinHasher) hashColumn(r io.Reader) vector {
 }
 
 func (m *MinHasher) bandColumn(col vector) vector {
-	bcol := make(vector, m.b)
+	bcol := make(vector, m.B)
 
-	for i, hash := range m.bandHashers {
-		for j := 0; j < len(col); j += m.r {
-			rows := col[j : j+m.r]
+	for i, hash := range m.bandhashers {
+		for j := 0; j < len(col); j += m.R {
+			rows := col[j : j+m.R]
 			h := hash(rows...)
 
 			bcol[i] = h
@@ -199,16 +199,16 @@ func (m *MinHasher) bandColumn(col vector) vector {
 	return bcol
 }
 
-func (m *MinHasher) bandMatrix() matrix {
+func (m *MinHasher) bandMatrix() Matrix {
 	m.matrixMutex.RLock()
 	defer m.matrixMutex.RUnlock()
 
-	b := make(matrix, len(m.matrix))
+	B := make(Matrix, len(m.Matrix))
 
-	for i, col := range m.matrix {
+	for i, col := range m.Matrix {
 		bcol := m.bandColumn(col)
-		b[i] = bcol
+		B[i] = bcol
 	}
 
-	return b
+	return B
 }
