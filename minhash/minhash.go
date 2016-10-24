@@ -34,7 +34,7 @@ type Match struct {
 func New(B int, R int, shingleSize int) *MinHasher {
 	return &MinHasher{
 		hashers:       generateHahsers(B*R, p1),
-		bandhashers:   generateHahsers(B, p2),
+		bandHashers:   generateHahsers(B, p2),
 		Matrix:        make(Matrix, 0),
 		R:             R,
 		B:             B,
@@ -55,7 +55,7 @@ type MinHasher struct {
 
 	// The hash functions used to hash the hash function results
 	// into bands.
-	bandhashers []hasher
+	bandHashers []hasher
 
 	// The matrix of documents and hash values. Each vector
 	// is a list of hash values for a document's shingles, eg element m[i,j] is the
@@ -187,7 +187,7 @@ func (m *MinHasher) hashColumn(R io.Reader) vector {
 func (m *MinHasher) bandColumn(col vector) vector {
 	bcol := make(vector, m.B)
 
-	for i, hash := range m.bandhashers {
+	for i, hash := range m.bandHashers {
 		for j := 0; j < len(col); j += m.R {
 			rows := col[j : j+m.R]
 			h := hash(rows...)
