@@ -20,4 +20,4 @@ func (v vector) signature() string {
 }
 
 // matrix is a two-dimensional collection of values.
-type matrix []vector
+type Matrix []vector

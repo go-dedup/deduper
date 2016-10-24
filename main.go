@@ -64,7 +64,7 @@ func main() {
 	mh := minhash.New(cfg.bands, cfg.rows, cfg.shingles)
 	persistName := "mh.gob"
 	RestoreState(persistName, mh)
-	defer SaveState(persistName, mh)
+	// defer SaveState(persistName, mh)
 
 	tests := []testCase{
 		{"p1", "hello world foo baz bar zomg"},
@@ -81,10 +81,13 @@ func main() {
 	print(cfg.threshold)
 	json.NewEncoder(os.Stdout).Encode(matches)
 
-  err := SaveState(persistName, mh)
+	// err := SaveState(persistName, mh)
+	b, err := json.Marshal(mh)
 	if err != nil {
 		log.Fatal("encode error:", err)
 	}
+	s := string(b)
+	log.Println(s)
 }
 
 /*
