@@ -63,16 +63,17 @@ func main() {
 
 	mh := minhash.New(cfg.bands, cfg.rows, cfg.shingles)
 	persistName := "mh.gob"
-	RestoreState(persistName, mh)
-	// defer SaveState(persistName, mh)
+	if RestoreState(persistName, mh) != nil {
+		// defer SaveState(persistName, mh)
 
-	tests := []testCase{
-		{"p1", "hello world foo baz bar zomg"},
-		{"p2", "goodbye world foo qux bar zomg"},
-		{"p3", "entirely unrelated"},
-	}
-	for _, tt := range tests {
-		command.NewWriteCommand(tt.id, tt.value).Apply(mh)
+		tests := []testCase{
+			{"p1", "hello world foo baz bar zomg"},
+			{"p2", "goodbye world foo qux bar zomg"},
+			{"p3", "entirely unrelated"},
+		}
+		for _, tt := range tests {
+			command.NewWriteCommand(tt.id, tt.value).Apply(mh)
+		}
 	}
 
 	matches := mh.FindSimilar(
@@ -87,7 +88,8 @@ func main() {
 		log.Fatal("encode error:", err)
 	}
 	s := string(b)
-	log.Println(s)
+	_ = s
+	//log.Println(s)
 }
 
 /*
